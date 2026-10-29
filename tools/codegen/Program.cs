@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RaylibBindingGenerator;
 
@@ -12,128 +11,89 @@ public static class Program
 {
   static string LIBRARY_NAMESPACE = "RaylibSharp";
 
-  sealed class RaylibApi
-  {
-    [JsonPropertyName("defines")]
-    public List<RaylibDefine> Defines { get; set; } = [];
+  static string[] STRUCTS_TO_EMIT = [
+    "Color",
+    "Image",
+    "Rectangle",
+    "Texture",
+    "Vector2",
+  ];
 
-    [JsonPropertyName("structs")]
-    public List<RaylibStruct> Structs { get; set; } = [];
+  static string[] FUNCTIONS_TO_EMIT = [
+    // module: rcore
+    
+    // Window-related functions
+    "InitWindow",
+    "CloseWindow",
+    "WindowShouldClose",
 
-    [JsonPropertyName("aliases")]
-    public List<RaylibAlias> Aliases { get; set; } = [];
+    // Drawing-related functions
+    "ClearBackground",
+    "BeginDrawing",
+    "EndDrawing",
 
-    [JsonPropertyName("enums")]
-    public List<RaylibEnum> Enums { get; set; } = [];
+    // Timing-related functions
+    "SetTargetFPS",
+    "GetFrameTime",
+    "GetTime",
+    "GetFPS",
 
-    [JsonPropertyName("callbacks")]
-    public List<RaylibFunction> Callbacks { get; set; } = [];
+    // Input-related functions: keyboard
+    "IsKeyPressed",
+    "IsKeyPressedRepeat",
+    "IsKeyDown",
+    "IsKeyReleased",
+    "IsKeyUp",
+    "GetKeyPressed",
+    "GetCharPressed",
+    "GetKeyName",
+    "SetExitKey",
 
-    [JsonPropertyName("functions")]
-    public List<RaylibFunction> Functions { get; set; } = [];
-  }
+    // Input-related functions: mouse
+    "IsMouseButtonPressed",
+    "IsMouseButtonDown",
+    "IsMouseButtonReleased",
+    "IsMouseButtonUp",
+    "GetMouseX",
+    "GetMouseY",
+    "GetMousePosition",
+    "GetMouseDelta",
+    "SetMousePosition",
+    "SetMouseOffset",
+    "SetMouseScale",
+    "GetMouseWheelMove",
+    "GetMouseWheelMoveV",
+    "SetMouseCursor",
 
-  sealed class RaylibDefine
-  {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
+    // module: rtextures
 
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "";
+    // Image loading functions
+    "LoadImage",
+    "UnloadImage",
 
-    [JsonPropertyName("value")]
-    public JsonElement Value { get; set; }
+    // Texture loading functions
+    "LoadTexture",
+    "LoadTextureFromImage",
+    "UnloadTexture",
 
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-  }
+    // Texture drawing functions
+    "DrawTexture",
+    "DrawTextureV",
+    "DrawTextureEx",
+    "DrawTextureRec",
+    "DrawTexturePro",
 
-  sealed class RaylibStruct
-  {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
+    // module: rtext
 
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-
-    [JsonPropertyName("fields")]
-    public List<RaylibField> Fields { get; set; } = [];
-  }
-
-  sealed class RaylibField
-  {
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "";
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-  }
-
-  sealed class RaylibAlias
-  {
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "";
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-  }
-
-  sealed class RaylibEnum
-  {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-
-    [JsonPropertyName("values")]
-    public List<RaylibEnumValue> Values { get; set; } = [];
-  }
-
-  sealed class RaylibEnumValue
-  {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("value")]
-    public int Value { get; set; }
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-  }
-
-  sealed class RaylibFunction
-  {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = "";
-
-    [JsonPropertyName("returnType")]
-    public string ReturnType { get; set; } = "";
-
-    [JsonPropertyName("params")]
-    public List<RaylibParameter> Parameters { get; set; } = [];
-  }
-
-  sealed class RaylibParameter
-  {
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "";
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = "";
-  }
+    // Text drawing functions
+    "DrawFPS",
+    "DrawText",
+  ];
 
   static class Generator
   {
+    private static readonly string MarshalAsString = "[MarshalAs(UnmanagedType.LPStr)]";
+
     private static readonly HashSet<string> CSharpKeywords = new() {
       "abstract", "as", "base", "bool", "break", "byte",
       "case", "catch", "char", "checked", "class", "const",
@@ -212,29 +172,23 @@ public static class Program
 
     private static void EmitEnums(StringBuilder sb)
     {
+      var t = "    ";
+
       foreach (RaylibEnum e in _api.Enums)
       {
-        sb.AppendLine(
-            $"    /// <summary>{EscapeXml(e.Description)}</summary>");
-
-        sb.AppendLine(
-            $"    public enum {SafeIdentifier(e.Name)} : int");
-
-        sb.AppendLine("    {");
+        sb.AppendLine($"{t}/// {SafeIdentifier(e.Name)}: {EscapeXml(e.Description)}");
+        sb.AppendLine();
 
         foreach (RaylibEnumValue value in e.Values)
         {
           if (!string.IsNullOrWhiteSpace(value.Description))
           {
-            sb.AppendLine(
-                $"        /// <summary>{EscapeXml(value.Description)}</summary>");
+            sb.AppendLine($"{t}/// <summary>{EscapeXml(value.Description)}</summary>");
           }
 
-          sb.AppendLine(
-              $"        {SafeIdentifier(value.Name)} = {value.Value},");
+          sb.AppendLine($"{t}public const int {SafeIdentifier(value.Name)} = {value.Value};");
         }
 
-        sb.AppendLine("    }");
         sb.AppendLine();
       }
     }
@@ -243,11 +197,9 @@ public static class Program
     {
       var t = "    ";
 
-      var structNames = new string[] {
-      "Color",
-    };
 
-      foreach (RaylibStruct structure in _api.Structs.Where(x => structNames.Contains(x.Name)))
+
+      foreach (RaylibStruct structure in _api.Structs.Where(x => STRUCTS_TO_EMIT.Contains(x.Name)))
       {
         sb.AppendLine($"{t}/// <summary>{EscapeXml(structure.Description)}</summary>");
 
@@ -394,23 +346,18 @@ public static class Program
     {
       var t = "    ";
 
-      var functionNames = new string[] {
-      "BeginDrawing",
-      "ClearBackground",
-      "CloseWindow",
-      "DrawText",
-      "EndDrawing",
-      "InitWindow",
-      "SetTargetFPS",
-      "WindowShouldClose",
-    };
-
-      foreach (RaylibFunction function in _api.Functions.Where(x => functionNames.Contains(x.Name)))
+      foreach (RaylibFunction function in _api.Functions.Where(x => FUNCTIONS_TO_EMIT.Contains(x.Name)))
       {
         string returnType =
             ResolveType(function.ReturnType);
 
         sb.AppendLine($"{t}/// <summary>{EscapeXml(function.Description)}</summary>");
+
+        if (returnType.Contains(MarshalAsString))
+        {
+          returnType = returnType.Replace(MarshalAsString + " ", "");
+          sb.AppendLine($"{t}{MarshalAsString.Replace("[", "[return: ")}");
+        }
 
         if (returnType == "bool")
         {
@@ -509,15 +456,16 @@ public static class Program
       if (pointerCount == 0)
         return baseType;
 
-      // void* is best represented as void*.
       if (baseType == "void")
-        return "void" + new string('*', pointerCount);
+      {
+        return "IntPtr";
+      }
 
       if (baseType == "const_char")
       {
         if (pointerCount == 1)
         {
-          return "[MarshalAs(UnmanagedType.LPStr)] string";
+          return $"{MarshalAsString} string";
         }
       }
 
@@ -687,7 +635,7 @@ public static class Program
   public static int Main(string[] args)
   {
     string input = "raylib_api.json";
-    string output = "../../src/Raylib.Generated.cs";
+    string output = "../../src/RaylibSharp/Raylib.Generated.cs";
 
     if (!File.Exists(input))
     {

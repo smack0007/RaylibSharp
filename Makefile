@@ -13,7 +13,7 @@ default: build
 
 .PHONY: build
 build:
-	cd ./src && dotnet build
+	cd ./src/RaylibSharp && dotnet build
 
 .PHONY: build-all
 build-all:

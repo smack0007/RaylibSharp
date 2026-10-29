@@ -8,7 +8,7 @@ namespace RaylibSharp;
 
 public static partial class Raylib
 {
-  private const string LibraryName = "libraylib.6.0.0.dylib";
+  private const string LibraryName = "libraylib.6.2.0.dylib";
 
 #pragma warning disable CA2255
   [ModuleInitializer]
