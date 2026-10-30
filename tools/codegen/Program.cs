@@ -207,7 +207,7 @@ public static class Program
 
     private static void EmitEnums(StringBuilder sb)
     {
-      var t = "    ";
+      var t = "  ";
 
       foreach (RaylibEnum e in _api.Enums)
       {
@@ -230,7 +230,7 @@ public static class Program
 
     private static void EmitStructs(StringBuilder sb)
     {
-      var t = "    ";
+      var t = "  ";
 
       foreach (RaylibStruct structure in _api.Structs.Where(x => STRUCTS_TO_EMIT.Contains(x.Name)))
       {
@@ -254,7 +254,7 @@ public static class Program
 
     private static void EmitDefines(StringBuilder sb)
     {
-      var t = "    ";
+      var t = "  ";
 
       foreach (RaylibDefine define in _api.Defines)
       {
@@ -282,7 +282,7 @@ public static class Program
         StringBuilder sb,
         RaylibField field)
     {
-      var t = "        ";
+      var t = "    ";
 
       string fieldName = SafeIdentifier(field.Name);
 
@@ -327,7 +327,7 @@ public static class Program
         int size,
         string comment)
     {
-      var t = "        ";
+      var t = "    ";
 
       if (IsFixedBufferType(elementType))
       {
@@ -377,7 +377,7 @@ public static class Program
 
     private static void EmitNativeFunctions(StringBuilder sb)
     {
-      var t = "    ";
+      var t = "  ";
 
       foreach (RaylibFunction function in _api.Functions.Where(x => FUNCTIONS_TO_EMIT.Contains(x.Name)))
       {
