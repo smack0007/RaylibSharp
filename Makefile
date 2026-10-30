@@ -1,4 +1,3 @@
-
 TARGETS_WITH_ARGS := build-example run-example
 TARGET_NAME       := $(firstword $(MAKECMDGOALS))
 ifeq ($(filter $(TARGET_NAME),$(TARGETS_WITH_ARGS)),$(TARGET_NAME))
@@ -12,8 +11,9 @@ ARG_1 := $(wordlist 2, 2, $(RUN_ARGS))
 REPO_DIR :=     $(shell realpath .)
 EXAMPLES_DIR := $(REPO_DIR)/examples
 
-PROJECT_FILES := $(shell find $(REPO_DIR) -name "*.csproj" -type f)
-PROJECT_DIRS := $(shell find $(REPO_DIR) -name "*.csproj" -type f | xargs dirname)
+PROJECT_FILES := $(shell find $(REPO_DIR) -type f -name "*.csproj")
+PROJECT_DIRS := $(shell find $(REPO_DIR) -type f -name "*.csproj" | xargs dirname)
+EXAMPLE_NAMES := $(shell find $(EXAMPLES_DIR) -type f -name "*.csproj" | xargs -I {} basename {} .csproj)
 
 default: build
 
@@ -23,10 +23,9 @@ build:
 
 .PHONY: build-all
 build-all:
-	@for dir in $(PROJECT_DIRS); do \
-		pushd $$dir > /dev/null; \
-		dotnet build; \
-		popd > /dev/null; \
+	make build
+	@for example in $(EXAMPLE_NAMES); do \
+		make build-example $$example; \
 	done
 
 .PHONY: codegen

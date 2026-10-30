@@ -1270,6 +1270,34 @@ public static unsafe partial class Raylib
       }
     }
 
+    /// <summary>Load font from memory buffer, fileType refers to extension: i.e. '.ttf'</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial Font LoadFontFromMemory(
+      byte* fileType,
+      byte* fileData,
+      int dataSize,
+      int fontSize,
+      int* codepoints,
+      int codepointCount
+    );
+
+    /// <summary>Load font from memory buffer, fileType refers to extension: i.e. '.ttf'</summary>
+    public static Font LoadFontFromMemory(
+      ReadOnlySpan<byte> fileType,
+      byte* fileData,
+      int dataSize,
+      int fontSize,
+      int* codepoints,
+      int codepointCount
+    )
+    {
+      fixed (byte* fileTypePtr = fileType)
+      {
+        return LoadFontFromMemory(fileTypePtr, fileData, dataSize, fontSize, codepoints, codepointCount);
+      }
+    }
+
     /// <summary>Check if font is valid (font data loaded, WARNING: GPU texture not checked)</summary>
     [LibraryImport(LibraryName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

@@ -98,7 +98,7 @@ public static class Program
     "LoadFont",
     "LoadFontEx",
     // "LoadFontFromImage",
-    // "LoadFontFromMemory",
+    "LoadFontFromMemory",
     "IsFontValid",
     // "LoadFontData",
     // "GenImageFontAtlas",
@@ -546,6 +546,11 @@ public static class Program
         return baseType;
 
       if (baseType == "const_char")
+      {
+        baseType = "byte";
+      }
+
+      if (baseType == "const_unsigned_char")
       {
         baseType = "byte";
       }
