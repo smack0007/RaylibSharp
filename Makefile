@@ -6,8 +6,14 @@ ifeq ($(filter $(TARGET_NAME),$(TARGETS_WITH_ARGS)),$(TARGET_NAME))
   $(eval $(RUN_ARGS):;@:)
 endif
 
-PROJECT_FILES := $(shell find . -name "*.csproj" -type f)
-PROJECT_DIRS := $(shell find . -name "*.csproj" -type f | xargs dirname)
+ARG_0 := $(wordlist 1, 1, $(RUN_ARGS))
+ARG_1 := $(wordlist 2, 2, $(RUN_ARGS))
+
+REPO_DIR :=     $(shell realpath .)
+EXAMPLES_DIR := $(REPO_DIR)/examples
+
+PROJECT_FILES := $(shell find $(REPO_DIR) -name "*.csproj" -type f)
+PROJECT_DIRS := $(shell find $(REPO_DIR) -name "*.csproj" -type f | xargs dirname)
 
 default: build
 
@@ -37,8 +43,8 @@ clean:
 
 .PHONY: build-example
 build-example:
-	cd ./examples/$(RUN_ARGS) && dotnet build
+	cd $(EXAMPLES_DIR)/$(ARG_0) && dotnet build
 
 .PHONY: run-example
 run-example:
-	cd ./examples/$(RUN_ARGS) && dotnet run
+	cd $(EXAMPLES_DIR)/$(ARG_0) && dotnet run

@@ -868,6 +868,42 @@ public static unsafe partial class Raylib
     public static partial bool WindowShouldClose(
     );
 
+    /// <summary>Get current screen width</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetScreenWidth(
+    );
+
+    /// <summary>Get current screen height</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetScreenHeight(
+    );
+
+    /// <summary>Get current render width (it considers HiDPI)</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetRenderWidth(
+    );
+
+    /// <summary>Get current render height (it considers HiDPI)</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetRenderHeight(
+    );
+
+    /// <summary>Get number of connected monitors</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetMonitorCount(
+    );
+
+    /// <summary>Get current monitor where window is placed</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int GetCurrentMonitor(
+    );
+
     /// <summary>Clear background (framebuffer) to color</summary>
     [LibraryImport(LibraryName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -1186,6 +1222,69 @@ public static unsafe partial class Raylib
       Color tint
     );
 
+    /// <summary>Get the default Font</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial Font GetFontDefault(
+    );
+
+    /// <summary>Load font from file into GPU memory (VRAM)</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial Font LoadFont(
+      byte* fileName
+    );
+
+    /// <summary>Load font from file into GPU memory (VRAM)</summary>
+    public static Font LoadFont(
+      ReadOnlySpan<byte> fileName
+    )
+    {
+      fixed (byte* fileNamePtr = fileName)
+      {
+        return LoadFont(fileNamePtr);
+      }
+    }
+
+    /// <summary>Load font from file with defined codepoints and generation size, use NULL for codepoints and 0 for codepointCount to load the default character set, font size is provided in pixels height</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial Font LoadFontEx(
+      byte* fileName,
+      int fontSize,
+      int* codepoints,
+      int codepointCount
+    );
+
+    /// <summary>Load font from file with defined codepoints and generation size, use NULL for codepoints and 0 for codepointCount to load the default character set, font size is provided in pixels height</summary>
+    public static Font LoadFontEx(
+      ReadOnlySpan<byte> fileName,
+      int fontSize,
+      int* codepoints,
+      int codepointCount
+    )
+    {
+      fixed (byte* fileNamePtr = fileName)
+      {
+        return LoadFontEx(fileNamePtr, fontSize, codepoints, codepointCount);
+      }
+    }
+
+    /// <summary>Check if font is valid (font data loaded, WARNING: GPU texture not checked)</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool IsFontValid(
+      Font font
+    );
+
+    /// <summary>Unload font from GPU memory (VRAM)</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void UnloadFont(
+      Font font
+    );
+
     /// <summary>Draw current FPS</summary>
     [LibraryImport(LibraryName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -1217,6 +1316,85 @@ public static unsafe partial class Raylib
       fixed (byte* textPtr = text)
       {
         DrawText(textPtr, posX, posY, fontSize, color);
+      }
+    }
+
+    /// <summary>Draw text using font and additional parameters</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void DrawTextEx(
+      Font font,
+      byte* text,
+      Vector2 position,
+      float fontSize,
+      float spacing,
+      Color tint
+    );
+
+    /// <summary>Draw text using font and additional parameters</summary>
+    public static void DrawTextEx(
+      Font font,
+      ReadOnlySpan<byte> text,
+      Vector2 position,
+      float fontSize,
+      float spacing,
+      Color tint
+    )
+    {
+      fixed (byte* textPtr = text)
+      {
+        DrawTextEx(font, textPtr, position, fontSize, spacing, tint);
+      }
+    }
+
+    /// <summary>Set vertical line spacing when drawing with line-breaks</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void SetTextLineSpacing(
+      int spacing
+    );
+
+    /// <summary>Measure string width for default font</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial int MeasureText(
+      byte* text,
+      int fontSize
+    );
+
+    /// <summary>Measure string width for default font</summary>
+    public static int MeasureText(
+      ReadOnlySpan<byte> text,
+      int fontSize
+    )
+    {
+      fixed (byte* textPtr = text)
+      {
+        return MeasureText(textPtr, fontSize);
+      }
+    }
+
+    /// <summary>Measure string size for Font</summary>
+    [LibraryImport(LibraryName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial Vector2 MeasureTextEx(
+      Font font,
+      byte* text,
+      float fontSize,
+      float spacing
+    );
+
+    /// <summary>Measure string size for Font</summary>
+    public static Vector2 MeasureTextEx(
+      Font font,
+      ReadOnlySpan<byte> text,
+      float fontSize,
+      float spacing
+    )
+    {
+      fixed (byte* textPtr = text)
+      {
+        return MeasureTextEx(font, textPtr, fontSize, spacing);
       }
     }
 

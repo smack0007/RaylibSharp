@@ -28,6 +28,12 @@ public static class Program
     "InitWindow",
     "CloseWindow",
     "WindowShouldClose",
+    "GetScreenWidth",
+    "GetScreenHeight",
+    "GetRenderWidth",
+    "GetRenderHeight",
+    "GetMonitorCount",
+    "GetCurrentMonitor",
 
     // Drawing-related functions
     "ClearBackground",
@@ -87,9 +93,35 @@ public static class Program
 
     // module: rtext
 
+    // Font loading/unloading functions
+    "GetFontDefault",
+    "LoadFont",
+    "LoadFontEx",
+    // "LoadFontFromImage",
+    // "LoadFontFromMemory",
+    "IsFontValid",
+    // "LoadFontData",
+    // "GenImageFontAtlas",
+    // "UnloadFontData",
+    "UnloadFont",
+    // "ExportFontAsCode",
+
     // Text drawing functions
     "DrawFPS",
     "DrawText",
+    "DrawTextEx",
+    // "DrawTextPro",
+    // "DrawCodepoint",
+    // "DrawTextCodepoints",
+
+    // Text font info functions
+    "SetTextLineSpacing",
+    "MeasureText",
+    "MeasureTextEx",
+    // "MeasureTextCodepoints",
+    // "GetGlyphIndex",
+    // "GetGlyphInfo",
+    // "GetGlyphAtlasRec",
   ];
 
   static class Generator
@@ -199,8 +231,6 @@ public static class Program
     private static void EmitStructs(StringBuilder sb)
     {
       var t = "    ";
-
-
 
       foreach (RaylibStruct structure in _api.Structs.Where(x => STRUCTS_TO_EMIT.Contains(x.Name)))
       {
@@ -518,6 +548,11 @@ public static class Program
       if (baseType == "const_char")
       {
         baseType = "byte";
+      }
+
+      if (baseType == "const_int")
+      {
+        baseType = "int";
       }
 
       return baseType + new string('*', pointerCount);

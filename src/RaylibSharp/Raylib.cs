@@ -48,4 +48,17 @@ public static unsafe partial class Raylib
 
     return null;
   }
+
+  //
+  // Overloads
+  //
+
+  public static Font LoadFontEx(
+   ReadOnlySpan<byte> fileName,
+   int fontSize,
+   int codepointCount
+  )
+  {
+    return LoadFontEx(fileName, fontSize, null, codepointCount);
+  }
 }
