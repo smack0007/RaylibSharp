@@ -3,7 +3,7 @@
 const int screenWidth = 800;
 const int screenHeight = 450;
 
-InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window"u8);
 
 SetTargetFPS(60);
 
@@ -13,7 +13,7 @@ while (!WindowShouldClose())
 
   ClearBackground(RAYWHITE);
 
-  DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+  DrawText("Congrats! You created your first window!"u8, 190, 200, 20, LIGHTGRAY);
 
   EndDrawing();
 }

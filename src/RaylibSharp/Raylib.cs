@@ -4,9 +4,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+[assembly: DisableRuntimeMarshalling]
+
 namespace RaylibSharp;
 
-public static partial class Raylib
+public static unsafe partial class Raylib
 {
   private const string LibraryName = "libraylib.6.2.0.dylib";
 
@@ -23,20 +25,17 @@ public static partial class Raylib
     Assembly assembly,
     DllImportSearchPath? searchPath)
   {
-    // Try to find library in PATH
     var path = FindInPath(libraryName);
     if (!string.IsNullOrEmpty(path))
     {
       return NativeLibrary.Load(path);
     }
 
-    // Fallback to default behavior
     return IntPtr.Zero;
   }
 
   private static string? FindInPath(string libraryName)
   {
-    // This is a simplified version - you'd need proper PATH parsing
     var pathEnv = Environment.GetEnvironmentVariable("PATH");
     var paths = pathEnv?.Split(Path.PathSeparator);
 

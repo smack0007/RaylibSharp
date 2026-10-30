@@ -122,4 +122,6 @@ sealed class RaylibParameter
 
   [JsonPropertyName("name")]
   public string Name { get; set; } = "";
+
+  public bool IsNormalized { get; set; }
 }

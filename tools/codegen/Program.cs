@@ -13,6 +13,8 @@ public static class Program
 
   static string[] STRUCTS_TO_EMIT = [
     "Color",
+    "Font",
+    "GlyphInfo",
     "Image",
     "Rectangle",
     "Texture",
@@ -160,13 +162,14 @@ public static class Program
       sb.AppendLine();
 
       sb.AppendLine("using System;");
+      sb.AppendLine("using System.Runtime.CompilerServices;");
       sb.AppendLine("using System.Runtime.InteropServices;");
       sb.AppendLine();
 
       sb.AppendLine($"namespace {namespaceName};");
       sb.AppendLine();
 
-      sb.AppendLine("public static partial class Raylib");
+      sb.AppendLine("public static unsafe partial class Raylib");
       sb.AppendLine("{");
     }
 
@@ -349,7 +352,7 @@ public static class Program
       foreach (RaylibFunction function in _api.Functions.Where(x => FUNCTIONS_TO_EMIT.Contains(x.Name)))
       {
         string returnType =
-            ResolveType(function.ReturnType);
+          ResolveType(function.ReturnType);
 
         sb.AppendLine($"{t}/// <summary>{EscapeXml(function.Description)}</summary>");
 
@@ -359,35 +362,89 @@ public static class Program
           sb.AppendLine($"{t}{MarshalAsString.Replace("[", "[return: ")}");
         }
 
+        sb.AppendLine($"{t}[LibraryImport(LibraryName)]");
+        sb.AppendLine($"{t}[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]");
+
         if (returnType == "bool")
         {
           sb.AppendLine($"{t}[return: MarshalAs(UnmanagedType.I1)]");
         }
 
-        sb.AppendLine($"{t}[DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]");
-
-        sb.AppendLine($"{t}public static extern {returnType} {SafeIdentifier(function.Name)}(");
+        sb.AppendLine($"{t}public static partial {returnType} {SafeIdentifier(function.Name)}(");
 
         EmitParameterList(
-            sb,
-            function.Parameters,
-            indent: "        ");
+          sb,
+          function.Parameters,
+          indent: t + "  ");
 
-        sb.AppendLine("    );");
+        sb.AppendLine($"{t});");
         sb.AppendLine();
+
+        // Support for UTF8 strings.
+        if (function.Parameters.Any(x => x.Type == "const char *"))
+        {
+          sb.AppendLine($"{t}/// <summary>{EscapeXml(function.Description)}</summary>");
+          sb.AppendLine($"{t}public static {returnType} {SafeIdentifier(function.Name)}(");
+
+          EmitParameterList(
+            sb,
+            function.Parameters.Select(x => x.Type == "const char *" ? new RaylibParameter() { Name = x.Name, Type = "ReadOnlySpan<byte>", IsNormalized = true } : x),
+            indent: t + "  ");
+
+          sb.AppendLine($"{t})");
+          sb.AppendLine($"{t}{{");
+
+          foreach (var parameter in function.Parameters.Where(x => x.Type == "const char *"))
+          {
+            sb.AppendLine($"{t}  fixed (byte* {SafeIdentifier(parameter.Name)}Ptr = {SafeIdentifier(parameter.Name)})");
+          }
+
+          sb.AppendLine($"{t}  {{");
+          sb.Append($"{t}    ");
+
+          if (function.ReturnType != "void")
+            sb.Append("return ");
+
+          sb.Append($"{SafeIdentifier(function.Name)}(");
+
+          var i = 0;
+          foreach (var parameter in function.Parameters)
+          {
+            sb.Append($"{SafeIdentifier(parameter.Name)}");
+
+            if (parameter.Type == "const char *")
+            {
+              sb.Append("Ptr");
+            }
+
+            if (i < function.Parameters.Count - 1)
+            {
+              sb.Append(", ");
+            }
+
+            i += 1;
+          }
+
+          sb.AppendLine(");");
+          sb.AppendLine($"{t}  }}");
+
+          sb.AppendLine($"{t}}}");
+          sb.AppendLine();
+        }
       }
     }
 
     private static void EmitParameterList(
         StringBuilder sb,
-        List<RaylibParameter> parameters,
+        IEnumerable<RaylibParameter> parameters,
         string indent)
     {
-      for (int i = 0; i < parameters.Count; i++)
-      {
-        RaylibParameter parameter = parameters[i];
+      var i = 0;
+      var count = parameters.Count();
 
-        string type = ResolveType(parameter.Type);
+      foreach (var parameter in parameters)
+      {
+        string type = !parameter.IsNormalized ? ResolveType(parameter.Type) : parameter.Type;
 
         string name = SafeIdentifier(parameter.Name);
 
@@ -406,10 +463,12 @@ public static class Program
         sb.Append(' ');
         sb.Append(name);
 
-        if (i < parameters.Count - 1)
+        if (i < count - 1)
           sb.Append(',');
 
         sb.AppendLine();
+
+        i += 1;
       }
     }
 
@@ -456,17 +515,9 @@ public static class Program
       if (pointerCount == 0)
         return baseType;
 
-      if (baseType == "void")
-      {
-        return "IntPtr";
-      }
-
       if (baseType == "const_char")
       {
-        if (pointerCount == 1)
-        {
-          return $"{MarshalAsString} string";
-        }
+        baseType = "byte";
       }
 
       return baseType + new string('*', pointerCount);
@@ -535,14 +586,12 @@ public static class Program
       if (open < 0 || !type.EndsWith(']'))
         return false;
 
-      string sizeText =
-          type[(open + 1)..^1];
+      string sizeText = type[(open + 1)..^1];
 
       if (!int.TryParse(sizeText, out size))
         return false;
 
-      elementType =
-          type[..open].Trim();
+      elementType = type[..open].Trim();
 
       return true;
     }
